@@ -16,20 +16,7 @@ const server = net.createServer((socket) => {
 
             socket.write(response);
         } else if (path === "/") {
-            // Construct the response headers and body
-            const contentType = "text/html";
-            const content = "<h1>Hello, World!</h1>";
-            const contentLength = Buffer.byteLength(content);
-
-            const response =
-                `HTTP/1.1 200 OK\r\n` +
-                `Content-Type: ${contentType}\r\n` +
-                `Content-Length: ${contentLength}\r\n` +
-                `\r\n` +
-                `${content}`;
-
-            socket.write(response);
-
+            socket.write('HTTP/1.1 200 OK\r\n\r\n');
         } else if (path.startsWith("/echo")) {
             // Construct the response headers and body
             const echoStr = path.slice(6); // Extract the string from the path
