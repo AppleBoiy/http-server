@@ -5,7 +5,6 @@ User-Agent: curl/7.64.1
 Accept: */*
 
 ### Request to echo "hello" ###
-
 GET http://localhost:4221/echo/hello
 Host: localhost:4221
 User-Agent: curl/7.64.1
