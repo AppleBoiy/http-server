@@ -1,29 +1,37 @@
-### Request to echo "abc"
-GET http://localhost:4221/echo/abc
+### Request to Root Endpoint ###
+GET / HTTP/1.1
 Host: localhost:4221
-User-Agent: curl/7.64.1
+User-Agent: SampleClient/1.0
 Accept: */*
 
-### Request to echo "hello"
-GET http://localhost:4221/echo/hello
+---
+
+### Request to Echo Endpoint ###
+GET /echo/HelloWorld HTTP/1.1
 Host: localhost:4221
-User-Agent: curl/7.64.1
+User-Agent: SampleClient/1.0
+Accept: text/plain
+
+---
+
+### Request to User-Agent Endpoint ###
+GET /user-agent HTTP/1.1
+Host: localhost:4221
+User-Agent: SampleClient/1.0
+Accept: text/plain
+
+---
+
+### Request to Files Endpoint (Existing File) ###
+GET /files/foo HTTP/1.1
+Host: localhost:4221
+User-Agent: SampleClient/1.0
 Accept: */*
 
-### Request to echo "test123"
-GET http://localhost:4221/echo/test123
-Host: localhost:4221
-User-Agent: curl/7.64.1
-Accept: */*
+---
 
-### Request to get the User-Agent header
-GET http://localhost:4221/user-agent
+### Request to Files Endpoint (Non-existing File) ###
+GET /files/non_existent_file HTTP/1.1
 Host: localhost:4221
-User-Agent: foobar/1.2.3
-Accept: */*
-
-### Another request to get the User-Agent header with a different User-Agent value
-GET http://localhost:4221/user-agent
-Host: localhost:4221
-User-Agent: my-custom-agent/4.5.6
+User-Agent: SampleClient/1.0
 Accept: */*
