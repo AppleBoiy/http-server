@@ -8,11 +8,11 @@ const server = net.createServer((socket) => {
 
         if (method !== "GET") {
             const response =
-                `HTTP/1.1 404 Not Found\r\n` +
+                `HTTP/1.1 405 Method Not Allowed\r\n` +
                 `Content-Type: text/plain\r\n` +
-                `Content-Length: 13\r\n` +
+                `Content-Length: 24\r\n` +
                 `\r\n` +
-                `404 Not Found`;
+                `405 Method Not Allowed`;
 
             socket.write(response);
         } else if (path === "/") {
@@ -29,6 +29,15 @@ const server = net.createServer((socket) => {
                 `Content-Length: ${contentLength}\r\n` +
                 `\r\n` +
                 `${echoStr}`;
+
+            socket.write(response);
+        } else {
+            const response =
+                `HTTP/1.1 404 Not Found\r\n` +
+                `Content-Type: text/plain\r\n` +
+                `Content-Length: 13\r\n` +
+                `\r\n` +
+                `404 Not Found`;
 
             socket.write(response);
         }
