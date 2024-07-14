@@ -1,49 +1,57 @@
 import * as net from "net";
 
+// Helper function to construct HTTP response
+function constructResponse(
+    statusCode: string,
+    statusMessage: string,
+    contentType: string,
+    body: string
+): string {
+    const contentLength = Buffer.byteLength(body);
+    return (
+        `HTTP/1.1 ${statusCode} ${statusMessage}\r\n` +
+        `Content-Type: ${contentType}\r\n` +
+        `Content-Length: ${contentLength}\r\n` +
+        `\r\n` +
+        body
+    );
+}
+
 const server = net.createServer((socket) => {
     socket.on("data", (data) => {
         const message = data.toString();
-        const [requestLine] = message.split("\r\n");
+        const [requestLine, ...headerLines] = message.split("\r\n");
         const [method, path] = requestLine.split(" ");
 
+        // Parse headers into an object
+        const headers = headerLines.reduce((acc: { [key: string]: string }, line) => {
+            const [key, value] = line.split(": ");
+            if (key && value) {
+                acc[key] = value;
+            }
+            return acc;
+        }, {});
+
+        let response: string;
+
         if (method !== "GET") {
-            const response =
-                `HTTP/1.1 405 Method Not Allowed\r\n` +
-                `Content-Type: text/plain\r\n` +
-                `Content-Length: 24\r\n` +
-                `\r\n` +
-                `405 Method Not Allowed`;
-
-            socket.write(response);
+            response = constructResponse("405", "Method Not Allowed", "text/plain", "405 Method Not Allowed");
         } else if (path === "/") {
-            socket.write('HTTP/1.1 200 OK\r\n\r\n');
-        } else if (path.startsWith("/echo")) {
-            // Construct the response headers and body
+            response = "HTTP/1.1 200 OK\r\n\r\n";
+        } else if (path.startsWith("/echo/")) {
             const echoStr = path.slice(6); // Extract the string from the path
-            const contentType = "text/plain";
-            const contentLength = Buffer.byteLength(echoStr);
-
-            const response =
-                `HTTP/1.1 200 OK\r\n` +
-                `Content-Type: ${contentType}\r\n` +
-                `Content-Length: ${contentLength}\r\n` +
-                `\r\n` +
-                `${echoStr}`;
-
-            socket.write(response);
+            response = constructResponse("200", "OK", "text/plain", echoStr);
+        } else if (path === "/user-agent") {
+            const userAgent = headers["User-Agent"] || "Unknown";
+            response = constructResponse("200", "OK", "text/plain", userAgent);
         } else {
-            const response =
-                `HTTP/1.1 404 Not Found\r\n` +
-                `Content-Type: text/plain\r\n` +
-                `Content-Length: 13\r\n` +
-                `\r\n` +
-                `404 Not Found`;
-
-            socket.write(response);
+            response = constructResponse("404", "Not Found", "text/plain", "404 Not Found");
         }
+
+        socket.write(response);
     });
 
-    socket.on("error", (err) => {
+    socket.on("error", (err: Error) => {
         console.error(err);
     });
 });
