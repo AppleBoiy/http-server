@@ -1,27 +1,13 @@
-import * as net from "net";
-import {HTTPHandler} from "./httpHandler";
+import * as net from 'net';
+import {RequestHandler} from './requestHandler';
 
-const server = net.createServer((socket) => {
-    // if --directory is not provided, the default directory is "public"
-    // otherwise, the provided directory is used
-    let httpHandler: HTTPHandler;
-    if (process.argv.includes("--directory")) {
-        const directoryIndex = process.argv.indexOf("--directory");
-        const directory = process.argv[directoryIndex + 1];
-        httpHandler = new HTTPHandler(directory);
-    } else {
-        httpHandler = new HTTPHandler("public");
-    }
-
-    socket.on("data", (data) => {
-        httpHandler.handleRequest(socket, data);
-    });
-
-    socket.on("error", (err) => {
-        console.error(err);
+const server = net.createServer((socket: net.Socket) => {
+    socket.on('data', (data) => {
+        const handler = new RequestHandler(socket, data);
+        handler.handleRequest();
     });
 });
 
-server.listen(4221, "localhost", () => {
-    console.log("Server is listening on localhost:4221");
+server.listen(4221, 'localhost', () => {
+    console.log('Server is listening on localhost:4221');
 });
