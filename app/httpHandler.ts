@@ -10,12 +10,17 @@ export class HTTPHandler {
 
     public handleRequest(socket: Socket, data: Buffer): void {
         const message = data.toString();
-        const [requestLine, ...headerLines] = message.split("\r\n");
+        const [requestLine, ...headerLinesAndBody] = message.split("\r\n");
         const [method, requestPath] = requestLine.split(" ");
 
-        const headers = this.parseHeaders(headerLines);
+        const headers = this.parseHeaders(headerLinesAndBody.slice(0, -2)); // Exclude the last empty line
 
-        const response = this.requestHandler.handleRequest(method, requestPath, headers);
+        let body = "";
+        if (headerLinesAndBody.length > 2) {
+            body = headerLinesAndBody.slice(-1)[0];
+        }
+
+        const response = this.requestHandler.handleRequest(method, requestPath, headers, body);
         socket.write(response);
     }
 
