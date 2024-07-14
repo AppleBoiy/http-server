@@ -1,24 +1,42 @@
 import * as net from "net";
 
-// You can use print statements as follows for debugging, they'll be visible when running tests.
-console.log("Logs from your program will appear here!");
-
-// Uncomment this to pass the first stage
 const server = net.createServer((socket) => {
     socket.on("data", (data) => {
         const message = data.toString();
-        const [method, path] = message.split(" ");
+        const [requestLine] = message.split("\r\n");
+        const [method, path] = requestLine.split(" ");
 
-        let response = "HTTP/1.1 "
-        if (method === "GET" && path === "/") {
-            response += "200 OK";
+        if (method === "GET" && path.startsWith("/echo/")) {
+            const echoStr = path.slice(6); // Extract the string from the path
+            const contentType = "text/plain";
+            const contentLength = Buffer.byteLength(echoStr);
+
+            // Construct the response headers and body
+            const response =
+                `HTTP/1.1 200 OK\r\n` +
+                `Content-Type: ${contentType}\r\n` +
+                `Content-Length: ${contentLength}\r\n` +
+                `\r\n` +
+                `${echoStr}`;
+
+            socket.write(response);
         } else {
-            response += "404 Not Found";
+            const response =
+                `HTTP/1.1 404 Not Found\r\n` +
+                `Content-Type: text/plain\r\n` +
+                `Content-Length: 13\r\n` +
+                `\r\n` +
+                `404 Not Found`;
+
+            socket.write(response);
         }
-        const responseBody = response + "\r\n\r\n";
-        socket.write(responseBody);
     });
 
+    socket.on("error", (err) => {
+        console.error(err);
+    });
 });
 
-server.listen(4221, "localhost");
+server.listen(4221, "localhost", () => {
+    console.log("Server is listening on localhost:4221");
+});
