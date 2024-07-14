@@ -4,10 +4,10 @@ import {RequestHandler} from "./requestHandler";
 export class HTTPHandler {
     private requestHandler: RequestHandler;
 
-    constructor() {
-        this.requestHandler = new RequestHandler();
+    constructor(directory: string) {
+        this.requestHandler = new RequestHandler(directory);
     }
-
+    
     public handleRequest(socket: Socket, data: Buffer): void {
         const message = data.toString();
         const [requestLine, ...headerLinesAndBody] = message.split("\r\n");

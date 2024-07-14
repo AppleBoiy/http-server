@@ -1,53 +1,64 @@
-import * as fs from "fs";
-import * as path from "path";
-import {argv} from "process";
-import {constructResponse} from "./responseUtils";
+import {EchoHandler} from "./handlers/echo";
+import {UserAgentHandler} from "./handlers/userAgent";
+import {FilesHandler} from "./handlers/files";
+import {constructResponse} from "./utils/responseUtils";
 
 export class RequestHandler {
-    private filesDirectory: string = "";
+    private readonly echoHandler: EchoHandler;
+    private readonly userAgentHandler: UserAgentHandler;
+    private readonly filesHandler: FilesHandler;
 
-    constructor() {
-        const directoryArgIndex = argv.indexOf("--directory");
-        if (directoryArgIndex !== -1 && directoryArgIndex + 1 < argv.length) {
-            this.filesDirectory = argv[directoryArgIndex + 1];
-        }
+    constructor(private readonly directory: string) {
+        this.echoHandler = new EchoHandler();
+        this.userAgentHandler = new UserAgentHandler();
+        this.filesHandler = new FilesHandler(directory);
     }
 
     public handleRequest(method: string, requestPath: string, headers: {
         [key: string]: string
     }, body: string): string {
-        if (method !== "GET" && method !== "POST") {
-            return constructResponse("405", "Method Not Allowed", "text/plain", "405 Method Not Allowed");
-        } else if (method === "GET" && requestPath === "/") {
-            return "HTTP/1.1 200 OK\r\n\r\n";
-        } else if (method === "GET" && requestPath.startsWith("/echo/")) {
-            const echoStr = requestPath.slice(6); // Extract the string from the path
-            return constructResponse("200", "OK", "text/plain", echoStr);
-        } else if (method === "GET" && requestPath === "/user-agent") {
+        try {
+            switch (method) {
+                case "GET":
+                    return this.handleGetRequest(requestPath, headers);
+                case "POST":
+                    return this.handlePostRequest(requestPath, body);
+                default:
+                    return this.methodNotAllowedResponse();
+            }
+        } catch (error: any) {
+            console.error(`Error handling ${method} ${requestPath}: ${error.message}`);
+            return constructResponse("500", "Internal Server Error", "text/plain", "Internal Server Error");
+        }
+    }
+
+    private handleGetRequest(requestPath: string, headers: { [key: string]: string }): string {
+        if (requestPath === "/") {
+            return constructResponse("200", "OK", "text/plain", "");
+        } else if (requestPath === "/user-agent") {
             const userAgent = headers["User-Agent"] || "Unknown";
-            return constructResponse("200", "OK", "text/plain", userAgent);
-        } else if (method === "POST" && requestPath.startsWith("/files/")) {
+            return this.userAgentHandler.GET(userAgent);
+        } else if (requestPath.startsWith("/echo/")) {
+            const echoStr = requestPath.slice(6); // Extract the string from the path
+            return this.echoHandler.GET(echoStr);
+        } else if (requestPath.startsWith("/files/")) {
             const filename = requestPath.slice(7); // Extract the filename from the path
-            const filePath = path.join(this.filesDirectory, filename);
-
-            try {
-                fs.writeFileSync(filePath, body);
-                return constructResponse("201", "Created", "text/plain", "File created successfully");
-            } catch (err) {
-                return constructResponse("500", "Internal Server Error", "text/plain", "Failed to create file");
-            }
-        } else if (method === "GET" && requestPath.startsWith("/files/")) {
-            const filename = requestPath.slice(7); // Extract the filename from the path
-            const filePath = path.join(this.filesDirectory, filename);
-
-            try {
-                const data = fs.readFileSync(filePath);
-                return constructResponse("200", "OK", "application/octet-stream", data);
-            } catch (err) {
-                return constructResponse("404", "Not Found", "text/plain", "File not found");
-            }
+            return this.filesHandler.GET(filename);
         } else {
             return constructResponse("404", "Not Found", "text/plain", "404 Not Found");
         }
+    }
+
+    private handlePostRequest(requestPath: string, body: string): string {
+        if (requestPath.startsWith("/files/")) {
+            const filename = requestPath.slice(7); // Extract the filename from the path
+            return this.filesHandler.POST(filename, body);
+        } else {
+            return constructResponse("404", "Not Found", "text/plain", "404 Not Found");
+        }
+    }
+
+    private methodNotAllowedResponse(): string {
+        return constructResponse("405", "Method Not Allowed", "text/plain", "405 Method Not Allowed");
     }
 }

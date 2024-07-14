@@ -1,9 +1,4 @@
-export function constructResponse(
-    statusCode: string,
-    statusMessage: string,
-    contentType: string,
-    body: string | Buffer
-): string {
+export function constructResponse(statusCode: string, statusMessage: string, contentType: string, body: string | Buffer): string {
     const contentLength = Buffer.byteLength(body);
     return (
         `HTTP/1.1 ${statusCode} ${statusMessage}\r\n` +
